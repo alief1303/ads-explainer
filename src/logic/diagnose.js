@@ -174,11 +174,11 @@ export function diagnose(input) {
   if (diagnoses.length === 0) diagnoses.push(FALLBACK);
 
   // --- Ambang data minimum: cegah diagnosa ngawur saat sampel kecil ---
-  // Kalau user isi jumlah konversi dan terlalu sedikit, datanya belum signifikan.
+  // Hanya relevan untuk objective Conversion — Traffic/Awareness tidak butuh konversi signifikan.
   const MIN_CONV = 25;
   const conv = parseFloat(input.conversions);
   let lowData = false;
-  if (!isNaN(conv) && conv < MIN_CONV) {
+  if (objective === "conversion" && !isNaN(conv) && conv < MIN_CONV) {
     lowData = true;
     diagnoses.unshift({
       id: "low_data",

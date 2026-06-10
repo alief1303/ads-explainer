@@ -51,8 +51,9 @@ export const RULES = [
   {
     // AOV kecil: konversi SEHAT (CPA tidak buruk) tapi ROAS tetap rendah.
     // Eksklusif dari leak_conversion karena syarat CPA berlawanan.
+    // !isBad (bukan notBad) supaya null CPA tidak memblokir rule — null = tidak diketahui, bukan buruk.
     id: "low_aov",
-    when: (r) => notBad(r.cpa) && isBad(r.roas) && !isBad(r.cvr),
+    when: (r) => !isBad(r.cpa) && isBad(r.roas) && !isBad(r.cvr),
     severity: "warning",
     title: "Konversi udah efisien, tapi ROAS kecil — nilai order-nya kekecilan",
     body: "Biaya buat dapetin order udah murah, tapi nilai per order-nya kekecilan dibanding biaya iklan.",
