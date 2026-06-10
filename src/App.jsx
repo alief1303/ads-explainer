@@ -17,6 +17,7 @@ import ResultDetail from './components/ResultDetail.jsx'
 
 export default function App() {
   const [tab, setTab] = useState('manual')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [ctx, setCtx] = useState({ platform: 'meta', format: 'all', industry: 'ecommerce', objective: 'conversion', margin: '', hpp: '', price: '', currency: 'idr', rate: '18000' })
   const hppMargin = (() => {
     const h = parseFloat(ctx.hpp), p = parseFloat(ctx.price)
@@ -122,11 +123,6 @@ export default function App() {
     if (!keys.some((k) => form[k] !== '' && form[k] != null)) {
       setError('Isi minimal satu kolom dulu.'); setResult(null); return
     }
-    // Objective Conversion wajib tahu margin (HPP + harga jual, atau margin langsung)
-    const marginKnown = hppMargin != null || (ctx.margin !== '' && !isNaN(parseFloat(ctx.margin)))
-    if (ctx.objective === 'conversion' && !marginKnown) {
-      setError('Untuk objective Conversion, isi HPP & Harga jual (atau Margin) dulu — biar bisa dinilai untung/boncos.'); setResult(null); return
-    }
     const active = {}
     keys.forEach((k) => { active[k] = form[k] })
     setError(''); setResult(diagnose({ ...ctx, ...active }))
@@ -230,17 +226,11 @@ export default function App() {
       <div className="max-w-3xl mx-auto px-5 py-6">
         {/* Pengaturan */}
         <div className={`${card} p-5 mb-4`}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className={labelCls}>Platform</label>
               <select className={inputCls} value={ctx.platform} onChange={(e) => setCtx((c) => ({ ...c, platform: e.target.value, format: 'all' }))}>
                 {Object.entries(PLATFORMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Format Iklan<Info text="Benchmark beda per format. Cth CTR rendah di Demand Gen/YouTube itu wajar, beda dengan Search." /></label>
-              <select className={inputCls} value={ctx.format} onChange={(e) => setC('format', e.target.value)}>
-                {Object.entries(FORMATS[ctx.platform] || { all: 'Semua' }).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
@@ -262,17 +252,35 @@ export default function App() {
                 <option value="usd">Dollar ($)</option>
               </select>
             </div>
-            {ctx.currency === 'idr' && (
-              <div>
-                <label className={labelCls}>Kurs (Rp per $1)<Info text="Dipakai mengubah angka Rupiah ke USD agar bisa dibandingkan ke benchmark global. Biarkan default kalau ragu." /></label>
-                <NumberInput className={inputCls} placeholder="cth: 18.000" currency="idr" value={ctx.rate} onChange={(v) => setC('rate', v)} />
-              </div>
-            )}
-            <div>
-              <label className={labelCls}>Nama brand (untuk PDF)</label>
-              <input type="text" className={inputCls} placeholder="cth: Sunflower Ads" value={brand} onChange={(e) => setBrand(e.target.value)} />
-            </div>
           </div>
+
+          <button
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="mt-3 text-xs text-[color:var(--muted)] hover:text-[color:var(--strong)] flex items-center gap-1 transition">
+            <span>{showAdvanced ? '▲' : '▼'}</span>
+            <span>{showAdvanced ? 'Sembunyikan' : 'Pengaturan lanjutan'} (format iklan, kurs, nama brand)</span>
+          </button>
+
+          {showAdvanced && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-[color:var(--bd)]">
+              <div>
+                <label className={labelCls}>Format Iklan<Info text="Benchmark beda per format. Cth CTR rendah di Demand Gen/YouTube itu wajar, beda dengan Search." /></label>
+                <select className={inputCls} value={ctx.format} onChange={(e) => setC('format', e.target.value)}>
+                  {Object.entries(FORMATS[ctx.platform] || { all: 'Semua' }).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              {ctx.currency === 'idr' && (
+                <div>
+                  <label className={labelCls}>Kurs (Rp per $1)<Info text="Dipakai mengubah angka Rupiah ke USD agar bisa dibandingkan ke benchmark global. Biarkan default kalau ragu." /></label>
+                  <NumberInput className={inputCls} placeholder="cth: 18.000" currency="idr" value={ctx.rate} onChange={(v) => setC('rate', v)} />
+                </div>
+              )}
+              <div>
+                <label className={labelCls}>Nama brand (untuk PDF)</label>
+                <input type="text" className={inputCls} placeholder="cth: Sunflower Ads" value={brand} onChange={(e) => setBrand(e.target.value)} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Kalkulator Profitabilitas */}
@@ -394,6 +402,11 @@ export default function App() {
               {error && <p className="text-[color:var(--bad)] text-sm mt-3">{error}</p>}
               <button onClick={handleDiagnose} className="w-full mt-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition">Diagnosa</button>
             </div>
+            {result && ctx.objective === 'conversion' && !result.profit && (
+              <div className="text-xs text-[color:var(--muted)] bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5 mb-3">
+                Vonis <b>untung/boncos</b> belum muncul — isi <b>HPP &amp; harga jual</b> di Kalkulator Profitabilitas untuk dapat analisis lengkap.
+              </div>
+            )}
             {result && (
               <div className={`${card} p-5`}>
                 <div className="flex justify-between items-center mb-4">
